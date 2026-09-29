@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MegaCity Tycoon 3D</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="c"></canvas>
+  <div id="hud">
+    <header>
+      <div>
+        <h1>MegaCity Tycoon 3D</h1>
+        <p class="tag">Drag to orbit · scroll zoom · click a plot to select / found</p>
+      </div>
+      <div class="stats">
+        <div class="stat"><span>Money</span><b id="money">$0</b></div>
+        <div class="stat"><span>Pop</span><b id="pop">0</b></div>
+        <div class="stat"><span>Happy</span><b id="happy">0%</b></div>
+        <div class="stat"><span>Industry</span><b id="industry">0</b></div>
+        <div class="stat"><span>Prestige</span><b id="prestige">0</b></div>
+        <div class="stat"><span>Cities</span><b id="cityCount">0</b></div>
+      </div>
+      <div class="header-actions">
+        <button id="saveBtn">Save</button>
+        <button id="loadBtn">Load</button>
+        <button id="prestigeBtn" disabled>Prestige</button>
+      </div>
+    </header>
+    <div id="eventBanner" class="event-banner hidden"></div>
+    <div class="bottom">
+      <aside>
+        <h3 id="currentCityName">Capital</h3>
+        <p id="cityFlavor" class="flavor"></p>
+        <button id="newCityBtn" class="full">Found nearest empty — $8,000</button>
+        <div id="cityList"></div>
+      </aside>
+      <div class="build-wrap">
+        <div id="buildings" class="buildings"></div>
+        <div id="buildButtons" class="build-grid"></div>
+      </div>
+    </div>
+  </div>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module" src="game.js"></script>
+</body>
+</html>
