@@ -1,55 +1,1195 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MegaCity Tycoon 3D</title>
-  <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Metropolis Empire — City Tycoon (3D)</title>
+<style>
+*{box-sizing:border-box;}
+body{margin:0;font-family:'Segoe UI',Tahoma,sans-serif;background:#0f1620;color:#e8eef5;}
+.header{display:flex;justify-content:space-between;align-items:center;padding:10px 20px;background:linear-gradient(90deg,#1a2332,#0f1620);border-bottom:2px solid #2a3a52;flex-wrap:wrap;gap:8px;}
+.header h1{font-size:20px;margin:0;background:linear-gradient(90deg,#4ade80,#60a5fa);-webkit-background-clip:text;background-clip:text;color:transparent;}
+.stat-badges{display:flex;gap:8px;flex-wrap:wrap;}
+.badge{background:#1a2332;padding:6px 12px;border-radius:8px;border:1px solid #2a3a52;font-size:13px;cursor:default;}
+.badge.clickable{cursor:pointer;}
+.badge.clickable:hover{border-color:#4ade80;}
+.controls{display:flex;gap:6px;flex-wrap:wrap;}
+.icon-btn{background:#1a2332;border:1px solid #2a3a52;color:#e8eef5;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:14px;}
+.icon-btn:hover{border-color:#4ade80;}
+.icon-btn.active{background:#22c55e33;border-color:#4ade80;}
+.icon-btn.special{border-color:#facc15;}
+.layout{display:flex;height:calc(100vh - 62px);}
+.sidebar{width:300px;overflow-y:auto;background:#141c28;border-right:2px solid #2a3a52;padding:10px;flex-shrink:0;}
+#citySearch{width:100%;padding:8px;margin-bottom:10px;border-radius:8px;border:1px solid #2a3a52;background:#0f1620;color:#e8eef5;}
+.city-item{padding:8px 10px;margin-bottom:6px;border-radius:8px;background:#1a2332;cursor:pointer;border:1px solid transparent;transition:.15s;}
+.city-item:hover{border-color:#3b4a63;}
+.city-item.active{border-color:#4ade80;box-shadow:0 0 8px rgba(74,222,128,.4);}
+.city-item.locked{opacity:.55;cursor:default;}
+.unlock-btn{background:#22c55e;color:#06210f;border:none;padding:4px 10px;border-radius:6px;cursor:pointer;font-weight:bold;font-size:12px;}
+.unlock-btn:hover{background:#4ade80;}
+.main{flex:1;display:flex;flex-direction:column;padding:14px;overflow:auto;}
+.city-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:6px;}
+.city-header h2{margin:0;font-size:22px;}
+.city-header .bonus{font-size:12px;color:#4ade80;background:#132018;padding:4px 10px;border-radius:6px;}
+.build-tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.tab-btn{padding:6px 12px;border-radius:6px;background:#1a2332;cursor:pointer;border:1px solid #2a3a52;font-size:13px;}
+.tab-btn.active{background:#2a3a52;border-color:#4ade80;}
+.build-menu{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.build-btn{width:92px;padding:8px 4px;border-radius:8px;background:#1a2332;border:1px solid #2a3a52;cursor:pointer;text-align:center;font-size:11px;}
+.build-btn:hover{border-color:#60a5fa;}
+.build-btn.selected{border-color:#facc15;box-shadow:0 0 8px rgba(250,204,21,.5);}
+.build-btn.disabled{opacity:.4;}
+.build-btn .icon{font-size:24px;}
+.zoom-controls{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
+.grid-wrap{width:100%;height:560px;border-radius:12px;overflow:hidden;border:2px solid #2a3a52;background:#05070a;position:relative;}
+#grid3d{width:100%;height:100%;}
+#grid3d canvas{display:block;cursor:grab;}
+.tile-tooltip{position:fixed;pointer-events:none;background:#141c28;border:1px solid #2a3a52;padding:4px 10px;border-radius:6px;font-size:12px;z-index:150;display:none;}
+.stats-panel{margin-top:16px;display:flex;gap:16px;flex-wrap:wrap;}
+.stat-block{background:#141c28;border:1px solid #2a3a52;border-radius:10px;padding:10px 14px;min-width:150px;font-size:13px;}
+.bar-container{width:150px;height:8px;background:#1a2332;border-radius:4px;overflow:hidden;margin:6px 0;}
+.bar-fill{height:100%;background:linear-gradient(90deg,#4ade80,#22c55e);transition:width .3s;}
+#toastContainer{position:fixed;bottom:20px;right:20px;z-index:100;display:flex;flex-direction:column;align-items:flex-end;}
+.toast{background:#1a2332;border:1px solid #4ade80;padding:10px 16px;border-radius:8px;margin-top:8px;box-shadow:0 4px 12px rgba(0,0,0,.4);animation:slideIn .3s ease;font-size:13px;max-width:280px;}
+.toast.fade{opacity:0;transition:opacity .5s;}
+@keyframes slideIn{from{transform:translateX(50px);opacity:0;}to{transform:translateX(0);opacity:1;}}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:200;}
+.modal-overlay.hidden{display:none;}
+.modal{background:#141c28;border:2px solid #2a3a52;border-radius:12px;padding:20px;max-width:500px;width:90%;max-height:80vh;overflow-y:auto;}
+.modal h2{margin-top:0;}
+.modal-close{float:right;cursor:pointer;background:#2a3a52;border:none;color:#fff;border-radius:6px;padding:4px 10px;}
+.modal table{width:100%;border-collapse:collapse;}
+.modal th,.modal td{padding:5px 8px;border-bottom:1px solid #2a3a52;font-size:13px;text-align:left;}
+.modal input[type=text]{padding:7px;border-radius:6px;border:1px solid #2a3a52;background:#0f1620;color:#fff;}
+@media (max-width:900px){.layout{flex-direction:column;}.sidebar{width:100%;height:220px;}.grid-wrap{height:420px;}}
+</style>
 </head>
 <body>
-  <canvas id="c"></canvas>
-  <div id="hud">
-    <header>
-      <div>
-        <h1>MegaCity Tycoon 3D</h1>
-        <p class="tag">Drag to orbit · scroll zoom · click a plot to select / found</p>
-      </div>
-      <div class="stats">
-        <div class="stat"><span>Money</span><b id="money">$0</b></div>
-        <div class="stat"><span>Pop</span><b id="pop">0</b></div>
-        <div class="stat"><span>Happy</span><b id="happy">0%</b></div>
-        <div class="stat"><span>Industry</span><b id="industry">0</b></div>
-        <div class="stat"><span>Prestige</span><b id="prestige">0</b></div>
-        <div class="stat"><span>Cities</span><b id="cityCount">0</b></div>
-      </div>
-      <div class="header-actions">
-        <button id="saveBtn">Save</button>
-        <button id="loadBtn">Load</button>
-        <button id="prestigeBtn" disabled>Prestige</button>
-      </div>
-    </header>
-    <div id="eventBanner" class="event-banner hidden"></div>
-    <div class="bottom">
-      <aside>
-        <h3 id="currentCityName">Capital</h3>
-        <p id="cityFlavor" class="flavor"></p>
-        <button id="newCityBtn" class="full">Found nearest empty — $8,000</button>
-        <div id="cityList"></div>
-      </aside>
-      <div class="build-wrap">
-        <div id="buildings" class="buildings"></div>
-        <div id="buildButtons" class="build-grid"></div>
-      </div>
-    </div>
+
+<div class="header">
+  <h1>🏙️ Metropolis Empire 3D</h1>
+  <div class="stat-badges">
+    <div class="badge" id="fundsDisplay">💰 0</div>
+    <div class="badge" id="popDisplay">👥 0</div>
+    <div class="badge" id="dayDisplay">📅 Day 1</div>
+    <div class="badge clickable" id="achDisplay">🏆 0/0</div>
+    <div class="badge clickable" id="prestigeDisplay">✨ 0 pts</div>
   </div>
-  <script type="importmap">
-  {
-    "imports": {
-      "three": "https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js",
-      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"
+  <div class="controls">
+    <button class="icon-btn speed-btn" data-speed="1">▶ 1x</button>
+    <button class="icon-btn speed-btn" data-speed="2">⏩ 2x</button>
+    <button class="icon-btn speed-btn" data-speed="4">⏭ 4x</button>
+    <button class="icon-btn" id="pauseBtn">⏸ Pause</button>
+    <button class="icon-btn special" id="prestigeBtn">✨ Prestige</button>
+    <button class="icon-btn" id="leaderboardBtn">🌐 Leaderboard</button>
+    <button class="icon-btn" id="disasterBtn">⚠️ Disasters</button>
+    <button class="icon-btn" id="saveBtn">💾 Save</button>
+    <button class="icon-btn" id="exportBtn">📤 Export</button>
+    <button class="icon-btn" id="importBtn">📥 Import</button>
+    <button class="icon-btn" id="resetBtn">🗑️ Reset</button>
+    <button class="icon-btn" id="helpBtn">❓ Help</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <input type="text" id="citySearch" placeholder="🔍 Search cities...">
+    <div id="cityList"></div>
+  </div>
+  <div class="main">
+    <div class="city-header">
+      <h2 id="cityTitle">Loading...</h2>
+      <div class="bonus" id="cityBonus"></div>
+    </div>
+    <div class="build-tabs" id="buildTabs"></div>
+    <div class="build-menu" id="buildButtons"></div>
+    <div class="zoom-controls">
+      <button class="icon-btn" id="zoomOut">🔍-</button>
+      <button class="icon-btn" id="zoomReset">🎥 Reset View</button>
+      <button class="icon-btn" id="zoomIn">🔍+</button>
+      <button class="icon-btn" id="autoRotateBtn">🔄 Auto-Rotate</button>
+    </div>
+    <div class="grid-wrap"><div id="grid3d"></div></div>
+    <div class="stats-panel" id="statsPanel"></div>
+  </div>
+</div>
+
+<div id="toastContainer"></div>
+<div class="tile-tooltip" id="tileTooltip"></div>
+
+<div class="modal-overlay hidden" id="achievementsModal">
+  <div class="modal"><button class="modal-close">✕</button><h2>🏆 Achievements</h2><div id="achievementsList"></div></div>
+</div>
+
+<div class="modal-overlay hidden" id="prestigeModal">
+  <div class="modal">
+    <button class="modal-close">✕</button>
+    <h2>✨ Prestige</h2>
+    <div id="prestigeInfo"></div>
+    <button class="icon-btn special" id="prestigeConfirmBtn" style="margin-top:12px;">🔄 Prestige Now</button>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="leaderboardModal">
+  <div class="modal">
+    <button class="modal-close">✕</button>
+    <h2>🌐 Global Leaderboard</h2>
+    <div style="margin-bottom:10px;display:flex;gap:6px;flex-wrap:wrap;">
+      <input type="text" id="playerNameInput" placeholder="Your name">
+      <button class="icon-btn" id="submitScoreBtn">📤 Submit Score</button>
+      <button class="icon-btn" id="refreshLeaderboardBtn">🔄 Refresh</button>
+    </div>
+    <div id="leaderboardList">Loading...</div>
+  </div>
+</div>
+
+<div class="modal-overlay hidden" id="disasterModal">
+  <div class="modal"><button class="modal-close">✕</button><h2>⚠️ Disaster Log</h2><div id="disasterLogList"></div></div>
+</div>
+
+<div class="modal-overlay hidden" id="helpModal">
+  <div class="modal">
+    <button class="modal-close">✕</button>
+    <h2>❓ How to Play</h2>
+    <p>🎥 <b>Camera:</b> drag to rotate, scroll to zoom, right-click-drag to pan.</p>
+    <p>🏗️ Select a building, then click a tile in the 3D world to place it. A green highlight means buildable, red means blocked.</p>
+    <p>🏠 Residential houses population. 🏪 Commercial & 🏭 Industrial create jobs/income. 🎡 Services boost happiness. ⚡💧 Utilities power your city.</p>
+    <p>🔓 Unlock new cities sequentially with Empire Funds. Each biome has unique bonuses.</p>
+    <p>🌪️ Random disasters can strike — build Fire Stations/Hospitals or buy Insurance to reduce damage.</p>
+    <p>✨ Once you've earned enough lifetime funds, Prestige to reset your empire for permanent bonuses.</p>
+    <p>🌐 Submit your score to the global leaderboard to compete with other players!</p>
+    <p>🧨 Bulldoze removes buildings for a 30% refund.</p>
+  </div>
+</div>
+
+<!-- Three.js 3D engine -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<!-- Firebase (optional, for online leaderboard) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+/* =============== FIREBASE CONFIG (OPTIONAL) ===============
+   To enable the ONLINE global leaderboard:
+   1. https://console.firebase.google.com → Create a free project
+   2. Build > Firestore Database > Create database (test mode is fine to start)
+   3. Project settings > General > Add app (Web) > copy the config object
+   4. Paste it below. Without this the game still works fine.
+============================================================ */
+const FIREBASE_CONFIG = {
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_PROJECT.firebaseapp.com",
+  projectId: "YOUR_PROJECT",
+  storageBucket: "YOUR_PROJECT.appspot.com",
+  messagingSenderId: "000000000000",
+  appId: "YOUR_APP_ID"
+};
+let firebaseEnabled = false;
+let db = null;
+function initFirebase(){
+  try{
+    if(FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.apiKey !== "YOUR_API_KEY" && window.firebase){
+      firebase.initializeApp(FIREBASE_CONFIG);
+      db = firebase.firestore();
+      firebaseEnabled = true;
+    }
+  }catch(e){ console.warn('Firebase init failed:', e); firebaseEnabled = false; }
+}
+
+/* ================= DATA ================= */
+const BIOMES = [
+  {name:'Grassland', emoji:'🌾', bonus:{residential:1.15}},
+  {name:'Desert', emoji:'🏜️', bonus:{power:1.3}},
+  {name:'Coastal', emoji:'🌊', bonus:{commercial:1.25}},
+  {name:'Mountain', emoji:'⛰️', bonus:{industrial:1.2}},
+  {name:'Tundra', emoji:'❄️', bonus:{happiness:0.9}},
+  {name:'Tropical', emoji:'🌴', bonus:{happiness:1.2}},
+  {name:'Forest', emoji:'🌲', bonus:{residential:1.1}},
+  {name:'Volcanic', emoji:'🌋', bonus:{power:1.4, happiness:0.85}},
+  {name:'Swamp', emoji:'🐊', bonus:{industrial:1.15, happiness:0.9}},
+  {name:'Island', emoji:'🏝️', bonus:{commercial:1.3}},
+  {name:'Canyon', emoji:'🪨', bonus:{industrial:1.25}},
+  {name:'Plains', emoji:'🌻', bonus:{residential:1.2}},
+];
+const BIOME_COLORS = {
+  Grassland:'#4d7c2f', Desert:'#c2a15b', Coastal:'#2d6f8e', Mountain:'#6b7280',
+  Tundra:'#a9c4d4', Tropical:'#1f9d76', Forest:'#2f5d3a', Volcanic:'#5a2a27',
+  Swamp:'#4a5d3a', Island:'#d9c17a', Canyon:'#8a5a3c', Plains:'#9caf4f'
+};
+
+const BUILDINGS = {
+  road: {name:'Road', emoji:'🛣️', cost:20, category:'infra'},
+  house: {name:'House', emoji:'🏠', cost:60, category:'residential', pop:6},
+  apartment: {name:'Apartment', emoji:'🏢', cost:350, category:'residential', pop:30, requires:{minPop:50}},
+  villa: {name:'Villa', emoji:'🏡', cost:900, category:'residential', pop:15, happiness:5, requires:{minPop:300}},
+  shop: {name:'Shop', emoji:'🏪', cost:150, category:'commercial', jobs:6, income:8, powerUse:2, waterUse:1},
+  mall: {name:'Mall', emoji:'🏬', cost:900, category:'commercial', jobs:25, income:40, powerUse:6, waterUse:3, requires:{minPop:200}},
+  office: {name:'Office', emoji:'🏦', cost:1500, category:'commercial', jobs:40, income:70, powerUse:8, waterUse:2, requires:{minPop:500}},
+  factory: {name:'Factory', emoji:'🏭', cost:600, category:'industrial', jobs:18, income:25, powerUse:8, waterUse:3, happinessPenalty:2},
+  farm: {name:'Farm', emoji:'🌾', cost:250, category:'industrial', jobs:8, income:10, powerUse:1, waterUse:2},
+  park: {name:'Park', emoji:'🌳', cost:120, category:'service', happiness:8, upkeep:2},
+  fountain: {name:'Fountain', emoji:'⛲', cost:300, category:'service', happiness:12, upkeep:4},
+  school: {name:'School', emoji:'🏫', cost:450, category:'service', happiness:10, upkeep:10, popCapBonus:50},
+  hospital: {name:'Hospital', emoji:'🏥', cost:700, category:'service', happiness:12, upkeep:15},
+  police: {name:'Police Station', emoji:'🚓', cost:550, category:'service', happiness:8, upkeep:12},
+  fireStation: {name:'Fire Station', emoji:'🚒', cost:550, category:'service', happiness:6, upkeep:12},
+  stadium: {name:'Stadium', emoji:'🏟️', cost:2500, category:'service', happiness:20, upkeep:30, requires:{minPop:1000}},
+  powerplant: {name:'Power Plant', emoji:'⚡', cost:1200, category:'utility', powerGen:100, upkeep:20},
+  solar: {name:'Solar Farm', emoji:'☀️', cost:1600, category:'utility', powerGen:80, upkeep:10},
+  watertower: {name:'Water Tower', emoji:'🚰', cost:900, category:'utility', waterGen:100, upkeep:10},
+  monument: {name:'Monument', emoji:'🗽', cost:6000, category:'decoration', happiness:30, upkeep:50, requires:{minPop:3000}},
+};
+const CATEGORY_LABELS = {
+  infra:'🛣️ Infrastructure', residential:'🏠 Residential', commercial:'🏪 Commercial',
+  industrial:'🏭 Industrial', service:'🎡 Services', utility:'⚡ Utilities', decoration:'🗽 Monuments'
+};
+const PREFIXES = ['New','Port','Lake','North','South','East','West','Fort','Mount','San','Santa','Rio','Green','Silver','Golden','Iron','Stone','River','Sun','Star','Crystal','Shadow','Wind','Storm','Cloud','Ember','Frost','Coral','Pearl','Ruby'];
+const SUFFIXES = ['ville','ton','burg','field','haven','port','wood','shire','dale','ridge','falls','bay','crest','glen','moor','point','springs','harbor','peak','vale'];
+
+const DISASTERS = [
+  {id:'fire', label:'🔥 Fire', chance:0.006, mitigator:'fireStation', severity:2},
+  {id:'earthquake', label:'🌍 Earthquake', chance:0.003, mitigator:null, severity:4},
+  {id:'flood', label:'🌊 Flood', chance:0.004, mitigator:null, severity:3},
+  {id:'tornado', label:'🌪️ Tornado', chance:0.003, mitigator:null, severity:3},
+  {id:'plague', label:'🦠 Plague', chance:0.003, mitigator:'hospital', severity:0},
+  {id:'meteor', label:'☄️ Meteor Strike', chance:0.0006, mitigator:null, severity:6},
+];
+
+const ACHIEVEMENTS = [
+  {id:'pop100', label:'First Steps', desc:'Reach 100 total population', check:s=>totalPopulation()>=100},
+  {id:'pop1000', label:'Growing Metropolis', desc:'Reach 1,000 total population', check:s=>totalPopulation()>=1000},
+  {id:'pop10000', label:'Booming Empire', desc:'Reach 10,000 total population', check:s=>totalPopulation()>=10000},
+  {id:'cities5', label:'Expansion', desc:'Unlock 5 cities', check:s=>s.cities.filter(c=>c.unlocked).length>=5},
+  {id:'cities25', label:'Regional Power', desc:'Unlock 25 cities', check:s=>s.cities.filter(c=>c.unlocked).length>=25},
+  {id:'cities75', label:'Continental Empire', desc:'Unlock 75 cities', check:s=>s.cities.filter(c=>c.unlocked).length>=75},
+  {id:'cities120', label:'World Domination', desc:'Unlock all 120 cities', check:s=>s.cities.filter(c=>c.unlocked).length>=120},
+  {id:'millionaire', label:'Millionaire', desc:'Accumulate 1,000,000 funds', check:s=>s.funds>=1000000},
+  {id:'billionaire', label:'Billionaire Tycoon', desc:'Accumulate 1,000,000,000 funds', check:s=>s.funds>=1000000000},
+  {id:'prestige1', label:'Rebirth', desc:'Prestige for the first time', check:s=>s.prestige.count>=1},
+  {id:'prestige10', label:'Empire Reborn', desc:'Prestige 10 times', check:s=>s.prestige.count>=10},
+];
+
+/* ================= HELPERS ================= */
+function fmt(n){
+  n = Math.round(n);
+  const neg = n<0; n = Math.abs(n);
+  if(n<1000) return (neg?'-':'')+n;
+  const units=['K','M','B','T','Qa','Qi'];
+  let u=-1, num=n;
+  while(num>=1000 && u<units.length-1){ num/=1000; u++; }
+  return (neg?'-':'')+num.toFixed(2)+units[u];
+}
+function describeBiomeBonus(biome){
+  const parts=[];
+  for(const k in biome.bonus){
+    const v = biome.bonus[k];
+    if(v>1) parts.push(`+${Math.round((v-1)*100)}% ${k}`);
+    else if(v<1) parts.push(`-${Math.round((1-v)*100)}% ${k}`);
+  }
+  return parts.join(', ');
+}
+function totalPopulation(){ return state.cities.reduce((sum,c)=>sum+(c.unlocked?c.population:0),0); }
+function getActiveCity(){ return state.cities[state.activeCityId]; }
+function getUnlockCost(city){
+  const discount = Math.min(0.5, state.prestige.points*0.01);
+  return Math.round(city.unlockCost*(1-discount));
+}
+
+/* ================= CITY GENERATION ================= */
+function buildCityList(count){
+  const list=[]; let idx=0;
+  for(let s=0;s<SUFFIXES.length && idx<count;s++){
+    for(let p=0;p<PREFIXES.length && idx<count;p++){
+      const biome = BIOMES[idx % BIOMES.length];
+      const gridW = Math.min(9+Math.floor(idx/12), 16);
+      const gridH = Math.min(7+Math.floor(idx/16), 12);
+      const unlockCost = idx===0 ? 0 : Math.round(300*Math.pow(1.135, idx)/10)*10;
+      list.push({
+        id: idx, name: PREFIXES[p]+SUFFIXES[s], biome, gridW, gridH,
+        grid: new Array(gridW*gridH).fill(null), gridVersion:0,
+        unlocked: idx===0, unlockCost,
+        population:0, populationCap:0, happiness:50,
+        jobs:0, jobsFilled:0, power:0, powerCap:0, powerUse:0,
+        water:0, waterCap:0, waterUse:0,
+        taxRate:12, lastIncome:0, grossIncome:0, upkeep:0, insurance:false,
+      });
+      idx++;
     }
   }
-  </script>
-  <script type="module" src="game.js"></script>
+  return list;
+}
+
+/* ================= STATE ================= */
+let state = null;
+let loopHandle = null;
+
+function newGame(){
+  state = {
+    funds:5000, day:1, speed:1, paused:false,
+    activeCityId:0, selectedBuilding:null, activeTab:'residential',
+    achievements:[], cities: buildCityList(120),
+    prestige:{points:0, count:0, lifetimeFunds:0},
+    disasterLog:[], playerName:null,
+  };
+  saveGame();
+}
+function migrateState(){
+  if(!state.prestige) state.prestige = {points:0, count:0, lifetimeFunds:0};
+  if(!state.disasterLog) state.disasterLog = [];
+  if(state.playerName===undefined) state.playerName = null;
+  state.cities.forEach(c=>{
+    if(c.insurance===undefined) c.insurance=false;
+    if(c.gridVersion===undefined) c.gridVersion=0;
+  });
+}
+function loadGame(){
+  const raw = localStorage.getItem('cityTycoonSave');
+  if(!raw){ newGame(); return; }
+  try{
+    const parsed = JSON.parse(raw);
+    if(!parsed.cities || parsed.cities.length<1) throw new Error('bad save');
+    state = parsed;
+    migrateState();
+  }catch(e){ newGame(); }
+}
+function saveGame(){ localStorage.setItem('cityTycoonSave', JSON.stringify(state)); }
+
+/* ================= SIMULATION ================= */
+function recomputeCity(city){
+  const biome = city.biome;
+  let popCap=0, jobs=0, powerCap=0, waterCap=0, powerUse=0, waterUse=0;
+  let happinessBase=50, upkeep=0, grossIncome=0;
+  for(const key of city.grid){
+    if(!key) continue;
+    const b = BUILDINGS[key]; if(!b) continue;
+    if(b.pop) popCap += Math.round(b.pop*(biome.bonus.residential||1));
+    if(b.jobs) jobs += b.jobs;
+    if(b.powerGen) powerCap += b.powerGen*(biome.bonus.power||1);
+    if(b.waterGen) waterCap += b.waterGen;
+    if(b.powerUse) powerUse += b.powerUse;
+    if(b.waterUse) waterUse += b.waterUse;
+    if(b.happiness) happinessBase += b.happiness;
+    if(b.happinessPenalty) happinessBase -= b.happinessPenalty;
+    if(b.upkeep) upkeep += b.upkeep;
+    if(b.popCapBonus) popCap += b.popCapBonus;
+    if(b.income) grossIncome += b.income;
+  }
+  let deficitPenalty=0;
+  if(powerUse>powerCap) deficitPenalty += 15;
+  if(waterUse>waterCap) deficitPenalty += 15;
+  const happiness = Math.max(0, Math.min(100, happinessBase*(biome.bonus.happiness||1) - deficitPenalty));
+
+  city.populationCap=popCap; city.jobs=jobs; city.jobsFilled=Math.min(jobs, city.population);
+  city.powerCap=powerCap; city.powerUse=powerUse;
+  city.waterCap=waterCap; city.waterUse=waterUse;
+  city.happiness=happiness; city.upkeep=upkeep; city.grossIncome=grossIncome;
+}
+function growPopulation(city){
+  const cap = city.populationCap;
+  if(cap<=0){ city.population=0; return; }
+  if(city.happiness>=40){
+    const room = cap-city.population;
+    const delta = Math.max(1, Math.round(room*0.08));
+    city.population = Math.min(cap, city.population+delta);
+  } else {
+    const delta = Math.max(1, Math.round(city.population*0.05));
+    city.population = Math.max(0, city.population-delta);
+  }
+}
+function cityFinance(city){
+  const employmentRatio = city.jobs>0 ? Math.min(1, city.population/city.jobs) : 1;
+  const commerceIncome = city.grossIncome*(0.5+0.5*employmentRatio)*(city.biome.bonus.commercial||1)*(city.biome.bonus.industrial||1);
+  const taxIncome = city.population*(city.happiness/100)*(city.taxRate/100)*0.6;
+  const incomeMult = 1 + state.prestige.points*0.05;
+  const totalIncome = (commerceIncome+taxIncome)*incomeMult;
+  return {totalIncome, net: totalIncome-city.upkeep};
+}
+function maybeRandomEvent(city){
+  if(Math.random()<0.02){
+    const roll = Math.random();
+    if(roll<0.4){
+      city.happiness = Math.min(100, city.happiness+10);
+      toast(`🎉 ${city.name}: Festival boosts happiness!`);
+    } else if(roll<0.7){
+      city.happiness = Math.max(0, city.happiness-8);
+      toast(`🔥 ${city.name}: Minor incident lowered happiness.`);
+    } else {
+      const bonus = Math.round(50+city.population*0.3);
+      state.funds += bonus;
+      toast(`💰 ${city.name}: Tourists bring +${fmt(bonus)} funds!`);
+    }
+  }
+}
+function disasterTick(city){
+  for(const d of DISASTERS){
+    let chance = d.chance;
+    const hasMitigator = d.mitigator && city.grid.includes(d.mitigator);
+    if(hasMitigator) chance *= 0.4;
+    if(city.insurance) chance *= 0.6;
+    if(Math.random() < chance){ triggerDisaster(city, d, hasMitigator); }
+  }
+}
+function triggerDisaster(city, d, mitigated){
+  let severity = d.severity;
+  if(mitigated) severity = Math.ceil(severity/2);
+  if(city.insurance) severity = Math.ceil(severity/2);
+  let lost = 0;
+  if(severity>0){
+    const occupied = city.grid.map((v,i)=>v?i:null).filter(i=>i!==null);
+    const numHit = Math.min(occupied.length, severity);
+    for(let n=0;n<numHit && occupied.length>0;n++){
+      const pick = Math.floor(Math.random()*occupied.length);
+      const idx = occupied[pick];
+      if(city.grid[idx]){ city.grid[idx]=null; lost++; }
+      occupied.splice(pick,1);
+    }
+  }
+  if(lost>0) city.gridVersion++;
+  const happinessLoss = 5 + severity*3;
+  city.happiness = Math.max(0, city.happiness-happinessLoss);
+  if(d.id==='plague'){ city.population = Math.round(city.population*0.85); }
+  state.disasterLog.unshift({day: state.day, city: city.name, disaster: d.label, lost});
+  if(state.disasterLog.length>30) state.disasterLog.pop();
+  toast(`${d.label} hit ${city.name}!${lost>0?` ${lost} buildings destroyed.`:''}`);
+  recomputeCity(city);
+}
+function checkAchievements(){
+  for(const a of ACHIEVEMENTS){
+    if(!state.achievements.includes(a.id) && a.check(state)){
+      state.achievements.push(a.id);
+      toast(`🏆 Achievement unlocked: ${a.label}`);
+    }
+  }
+}
+function tick(){
+  if(state.paused) return;
+  state.day++;
+  let totalNet=0;
+  for(const city of state.cities){
+    if(!city.unlocked) continue;
+    recomputeCity(city);
+    growPopulation(city);
+    maybeRandomEvent(city);
+    disasterTick(city);
+    const fin = cityFinance(city);
+    totalNet += fin.net;
+    city.lastIncome = fin.net;
+  }
+  state.funds += totalNet;
+  if(totalNet>0) state.prestige.lifetimeFunds += totalNet;
+  checkAchievements();
+  renderAll();
+  if(state.day % 5 === 0) saveGame();
+}
+function restartLoop(){
+  if(loopHandle) clearInterval(loopHandle);
+  loopHandle = setInterval(tick, 2000/state.speed);
+}
+
+/* ================= PRESTIGE ================= */
+function calculatePrestigeGain(){ return Math.floor(Math.sqrt(state.prestige.lifetimeFunds/50000)); }
+function openPrestigeModal(){
+  const gain = calculatePrestigeGain();
+  document.getElementById('prestigeInfo').innerHTML = `
+    <p>✨ Empire Points: <b>${state.prestige.points}</b></p>
+    <p>📈 Income Bonus: +${state.prestige.points*5}%</p>
+    <p>💸 Unlock Discount: -${Math.min(50, state.prestige.points)}%</p>
+    <p>🔄 Times Prestiged: ${state.prestige.count}</p>
+    <hr style="border-color:#2a3a52;">
+    <p>Lifetime earnings since last prestige: 💰${fmt(state.prestige.lifetimeFunds)}</p>
+    <p>Prestiging now grants: <b style="color:#facc15;">+${gain} Empire Points</b></p>
+    <p style="opacity:.7;font-size:12px;">Prestiging resets ALL cities, buildings and funds — but Empire Points and Achievements are kept forever and boost every future run.</p>
+  `;
+  document.getElementById('prestigeConfirmBtn').disabled = gain<1;
+  document.getElementById('prestigeConfirmBtn').style.opacity = gain<1 ? .5 : 1;
+  toggleModal('prestigeModal');
+}
+function doPrestige(){
+  const gain = calculatePrestigeGain();
+  if(gain<1){ toast('⚠️ Earn at least 50,000 lifetime funds before prestiging.'); return; }
+  if(!confirm(`Prestige now for +${gain} Empire Points? This resets all cities and funds.`)) return;
+  state.prestige.points += gain;
+  state.prestige.count += 1;
+  state.prestige.lifetimeFunds = 0;
+  state.cities = buildCityList(120);
+  state.funds = 5000 + state.prestige.points*500;
+  state.day = 1;
+  state.activeCityId = 0;
+  toast(`✨ Prestiged! +${gain} Empire Points (Total: ${state.prestige.points})`);
+  document.getElementById('prestigeModal').classList.add('hidden');
+  threeState.lastCityId = null;
+  renderAll(); saveGame();
+}
+
+/* ================= LEADERBOARD ================= */
+async function submitScore(){
+  if(!firebaseEnabled){ toast('⚠️ Leaderboard not configured — see README.md'); return; }
+  const name = state.playerName || 'Anonymous';
+  try{
+    await db.collection('leaderboard').doc(name).set({
+      name, population: totalPopulation(), funds: Math.round(state.funds),
+      citiesUnlocked: state.cities.filter(c=>c.unlocked).length,
+      prestige: state.prestige.points, updatedAt: Date.now()
+    });
+    toast('🏆 Score submitted!');
+    loadLeaderboard();
+  }catch(e){ toast('❌ Failed to submit score.'); console.error(e); }
+}
+async function loadLeaderboard(){
+  const listEl = document.getElementById('leaderboardList');
+  if(!firebaseEnabled){
+    listEl.innerHTML = `<p>⚠️ Online leaderboard not configured yet.<br>See <b>README.md</b> to connect a free Firebase backend in ~5 minutes.</p>`;
+    return;
+  }
+  listEl.innerHTML = 'Loading...';
+  try{
+    const snap = await db.collection('leaderboard').orderBy('population','desc').limit(50).get();
+    let html = '<table><tr><th>#</th><th>Player</th><th>Population</th><th>Cities</th><th>✨</th></tr>';
+    let i=1;
+    snap.forEach(doc=>{
+      const d = doc.data();
+      html += `<tr><td>${i++}</td><td>${d.name}</td><td>${fmt(d.population)}</td><td>${d.citiesUnlocked}</td><td>${d.prestige||0}</td></tr>`;
+    });
+    html += '</table>';
+    listEl.innerHTML = html || 'No scores yet — be the first!';
+  }catch(e){ listEl.innerHTML = '❌ Failed to load leaderboard.'; console.error(e); }
+}
+
+/* ================= ACTIONS ================= */
+function unlockCity(id){
+  const city = state.cities[id];
+  if(city.unlocked) return;
+  if(id>0 && !state.cities[id-1].unlocked){ toast('🔒 Unlock the previous city first!'); return; }
+  const cost = getUnlockCost(city);
+  if(state.funds < cost){ toast('❌ Not enough funds!'); return; }
+  state.funds -= cost;
+  city.unlocked = true;
+  state.activeCityId = id;
+  toast(`🎉 ${city.name} unlocked!`);
+  renderAll(); saveGame();
+}
+function selectCity(id){ state.activeCityId = id; state.selectedBuilding = null; renderAll(); }
+function selectBuilding(key){ state.selectedBuilding = state.selectedBuilding===key ? null : key; renderBuildMenu(); }
+function placeBuilding(cityId, cellIndex){
+  const city = state.cities[cityId];
+  if(!state.selectedBuilding) return;
+  if(state.selectedBuilding==='bulldoze'){
+    const existing = city.grid[cellIndex];
+    if(existing){
+      state.funds += Math.round(BUILDINGS[existing].cost*0.3);
+      city.grid[cellIndex]=null;
+      city.gridVersion++;
+      recomputeCity(city); renderAll(); saveGame();
+    }
+    return;
+  }
+  const key = state.selectedBuilding;
+  const b = BUILDINGS[key];
+  if(city.grid[cellIndex]){ toast('⚠️ Tile occupied!'); return; }
+  if(state.funds < b.cost){ toast('❌ Not enough funds!'); return; }
+  if(b.requires && b.requires.minPop && city.population < b.requires.minPop){
+    toast(`🔒 Requires population ${fmt(b.requires.minPop)}`); return;
+  }
+  state.funds -= b.cost;
+  city.grid[cellIndex] = key;
+  city.gridVersion++;
+  recomputeCity(city);
+  renderAll(); saveGame();
+}
+function buyInsurance(city){
+  if(city.insurance) return;
+  if(state.funds<500){ toast('❌ Not enough funds!'); return; }
+  state.funds -= 500; city.insurance = true;
+  toast(`🛡️ Disaster insurance active in ${city.name}!`);
+  renderAll(); saveGame();
+}
+function resetGame(){
+  if(confirm('Reset ALL progress including Empire Points? This cannot be undone.')){
+    localStorage.removeItem('cityTycoonSave');
+    newGame(); threeState.lastCityId=null; restartLoop(); renderAll();
+  }
+}
+function exportSave(){ prompt('Copy your save code (Ctrl+C):', JSON.stringify(state)); }
+function importSave(){
+  const raw = prompt('Paste your save code:');
+  if(!raw) return;
+  try{ state = JSON.parse(raw); migrateState(); threeState.lastCityId=null; restartLoop(); renderAll(); saveGame(); toast('✅ Save imported!'); }
+  catch(e){ alert('Invalid save data.'); }
+}
+function toggleModal(id){ document.getElementById(id).classList.toggle('hidden'); }
+function toast(msg){
+  const el = document.createElement('div');
+  el.className='toast'; el.textContent=msg;
+  document.getElementById('toastContainer').appendChild(el);
+  setTimeout(()=>{ el.classList.add('fade'); setTimeout(()=>el.remove(),500); }, 3500);
+}
+
+/* ================= 3D ENGINE ================= */
+const TILE = 2;
+let threeState = { lastCityId:null, lastGridVersion:null };
+
+function boxMesh(w,h,d,color,opts={}){
+  const geo = new THREE.BoxGeometry(w,h,d);
+  const mat = new THREE.MeshStandardMaterial(Object.assign({color, roughness:0.75, metalness:0.05}, opts));
+  const m = new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; return m;
+}
+function cylMesh(rt,rb,h,color,segs=12,opts={}){
+  const geo = new THREE.CylinderGeometry(rt,rb,h,segs);
+  const mat = new THREE.MeshStandardMaterial(Object.assign({color, roughness:0.65}, opts));
+  const m = new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; return m;
+}
+function coneMesh(r,h,color,segs=4,opts={}){
+  const geo = new THREE.ConeGeometry(r,h,segs);
+  const mat = new THREE.MeshStandardMaterial(Object.assign({color, roughness:0.6}, opts));
+  const m = new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; return m;
+}
+function sphMesh(r,color,opts={}){
+  const geo = new THREE.SphereGeometry(r,14,10);
+  const mat = new THREE.MeshStandardMaterial(Object.assign({color, roughness:0.5}, opts));
+  const m = new THREE.Mesh(geo,mat); m.castShadow=true; m.receiveShadow=true; return m;
+}
+
+const BUILDING_MODELS = {
+  road: ()=>{
+    const g = new THREE.Group();
+    const base = boxMesh(TILE*0.95,0.05,TILE*0.95,0x2b2f36); base.position.y=0.025; g.add(base);
+    const stripe = boxMesh(TILE*0.85,0.06,0.08,0xf4d35e); stripe.position.y=0.03; g.add(stripe);
+    return g;
+  },
+  house: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.1,0.8,1.1,0xd9a066); body.position.y=0.4; g.add(body);
+    const roof = coneMesh(0.85,0.6,0x8b3a2a,4); roof.rotation.y=Math.PI/4; roof.position.y=1.1; g.add(roof);
+    return g;
+  },
+  apartment: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.3,2.0,1.3,0x8595ab); body.position.y=1.0; g.add(body);
+    const top = boxMesh(1.4,0.2,1.4,0x5c6a80); top.position.y=2.1; g.add(top);
+    for(let i=0;i<3;i++){
+      for(let j=0;j<3;j++){
+        const w = boxMesh(0.16,0.22,0.02,0xfef3b0,{emissive:0xfff3b0, emissiveIntensity:0.4});
+        w.position.set(-0.4+i*0.4, 0.5+j*0.55, 0.66); g.add(w);
+      }
+    }
+    return g;
+  },
+  villa: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.2,0.9,1.0,0xf0e4d0); body.position.y=0.45; g.add(body);
+    const roof = boxMesh(1.35,0.15,1.15,0x7a4b3a); roof.position.y=0.975; roof.rotation.z=0.15; g.add(roof);
+    const trunk = cylMesh(0.05,0.07,0.4,0x6b4423); trunk.position.set(0.75,0.2,0.6); g.add(trunk);
+    const top = sphMesh(0.28,0x2f7d3a); top.position.set(0.75,0.55,0.6); g.add(top);
+    return g;
+  },
+  shop: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.2,0.9,1.0,0xe8e8e8); body.position.y=0.45; g.add(body);
+    const awning = boxMesh(1.3,0.12,0.35,0x2a9d8f); awning.position.set(0,0.75,0.6); g.add(awning);
+    return g;
+  },
+  mall: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.7,1.1,1.5,0xc9c9d4); body.position.y=0.55; g.add(body);
+    for(let i=-1;i<=1;i++){
+      const sky = boxMesh(0.3,0.1,0.3,0x9fd8ff,{emissive:0x9fd8ff,emissiveIntensity:0.3});
+      sky.position.set(i*0.5,1.15,0); g.add(sky);
+    }
+    return g;
+  },
+  office: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.1,2.6,1.1,0x3f6b8a,{metalness:0.4, roughness:0.2, emissive:0x1c3a4d, emissiveIntensity:0.3});
+    body.position.y=1.3; g.add(body);
+    return g;
+  },
+  factory: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.3,1.0,1.1,0x777f88); body.position.y=0.5; g.add(body);
+    const chimney = cylMesh(0.15,0.18,1.1,0x5a5f66); chimney.position.set(0.4,1.05,0); g.add(chimney);
+    const smoke = sphMesh(0.22,0xffffff,{transparent:true,opacity:0.5}); smoke.position.set(0.4,1.75,0); g.add(smoke);
+    return g;
+  },
+  farm: ()=>{
+    const g = new THREE.Group();
+    const field = boxMesh(1.7,0.05,1.7,0x6a8f3a); field.position.y=0.025; g.add(field);
+    const barn = boxMesh(0.5,0.5,0.45,0xa23b2e); barn.position.set(-0.5,0.25,-0.5); g.add(barn);
+    const silo = cylMesh(0.15,0.15,0.6,0xc9c9c9); silo.position.set(-0.05,0.3,-0.5); g.add(silo);
+    const siloTop = coneMesh(0.15,0.2,0xaaaaaa,12); siloTop.position.set(-0.05,0.7,-0.5); g.add(siloTop);
+    return g;
+  },
+  park: ()=>{
+    const g = new THREE.Group();
+    const grass = boxMesh(1.7,0.05,1.7,0x3f8f3f); grass.position.y=0.025; g.add(grass);
+    [[-0.5,-0.5],[0.5,0.4],[0.1,-0.3]].forEach(([x,z])=>{
+      const trunk = cylMesh(0.05,0.06,0.35,0x6b4423); trunk.position.set(x,0.2,z); g.add(trunk);
+      const top = sphMesh(0.26,0x2f9d4a); top.position.set(x,0.5,z); g.add(top);
+    });
+    return g;
+  },
+  fountain: ()=>{
+    const g = new THREE.Group();
+    const base = cylMesh(0.55,0.6,0.2,0xb8b8b8,16); base.position.y=0.1; g.add(base);
+    const mid = cylMesh(0.18,0.2,0.5,0xcfcfcf,12); mid.position.y=0.45; g.add(mid);
+    const water = sphMesh(0.14,0x4fb8e8,{transparent:true,opacity:0.85}); water.position.y=0.75; g.add(water);
+    return g;
+  },
+  school: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.4,1.0,1.1,0xd9c27e); body.position.y=0.5; g.add(body);
+    const pole = cylMesh(0.03,0.03,0.9,0x999999); pole.position.set(0.7,1.45,0.4); g.add(pole);
+    const flag = boxMesh(0.25,0.16,0.02,0xef4444); flag.position.set(0.83,1.35,0.4); g.add(flag);
+    return g;
+  },
+  hospital: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.4,1.3,1.2,0xffffff); body.position.y=0.65; g.add(body);
+    const crossV = boxMesh(0.16,0.5,0.05,0xe63946); crossV.position.set(0,0.9,0.61); g.add(crossV);
+    const crossH = boxMesh(0.5,0.16,0.05,0xe63946); crossH.position.set(0,0.9,0.61); g.add(crossH);
+    return g;
+  },
+  police: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.2,1.0,1.0,0x2b4c8c); body.position.y=0.5; g.add(body);
+    const lb = boxMesh(0.2,0.12,0.2,0x2f6fe0,{emissive:0x2f6fe0,emissiveIntensity:0.6}); lb.position.set(-0.15,1.06,0); g.add(lb);
+    const lr = boxMesh(0.2,0.12,0.2,0xe02f2f,{emissive:0xe02f2f,emissiveIntensity:0.6}); lr.position.set(0.15,1.06,0); g.add(lr);
+    return g;
+  },
+  fireStation: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.3,1.0,1.1,0xb02b2b); body.position.y=0.5; g.add(body);
+    const door = boxMesh(0.6,0.6,0.05,0x2a2a2a); door.position.set(0,0.35,0.56); g.add(door);
+    return g;
+  },
+  stadium: ()=>{
+    const g = new THREE.Group();
+    const field = boxMesh(1.4,0.05,1.0,0x3f8f3f); field.position.y=0.025; g.add(field);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.0,0.15,8,20), new THREE.MeshStandardMaterial({color:0x9aa4b2}));
+    ring.rotation.x = Math.PI/2; ring.position.y=0.3; ring.castShadow=true; g.add(ring);
+    return g;
+  },
+  powerplant: ()=>{
+    const g = new THREE.Group();
+    const body = boxMesh(1.3,0.9,1.0,0x6b7280); body.position.y=0.45; g.add(body);
+    const t1 = cylMesh(0.28,0.35,1.1,0x8b8f96,16); t1.position.set(-0.35,1.45,0.2); g.add(t1);
+    const t2 = t1.clone(); t2.position.x=0.35; g.add(t2);
+    const light = sphMesh(0.07,0xff3b3b,{emissive:0xff3b3b, emissiveIntensity:1}); light.position.set(0,1.0,0); g.add(light);
+    return g;
+  },
+  solar: ()=>{
+    const g = new THREE.Group();
+    const panel = boxMesh(1.5,0.04,1.1,0x1c3a5c,{metalness:0.3, roughness:0.3});
+    panel.position.y=0.4; panel.rotation.x=-0.25; g.add(panel);
+    const leg1 = boxMesh(0.06,0.35,0.06,0x444444); leg1.position.set(-0.6,0.17,0.5); g.add(leg1);
+    const leg2 = leg1.clone(); leg2.position.x=0.6; g.add(leg2);
+    return g;
+  },
+  watertower: ()=>{
+    const g = new THREE.Group();
+    const tank = cylMesh(0.55,0.55,0.7,0xb9c4cc,16); tank.position.y=1.2; g.add(tank);
+    const cap = coneMesh(0.6,0.25,0x9aa4ac,16); cap.position.y=1.67; g.add(cap);
+    [[-0.35,-0.35],[0.35,-0.35],[-0.35,0.35],[0.35,0.35]].forEach(([x,z])=>{
+      const leg = cylMesh(0.04,0.04,1.1,0x777c82); leg.position.set(x,0.55,z); g.add(leg);
+    });
+    return g;
+  },
+  monument: ()=>{
+    const g = new THREE.Group();
+    const base = boxMesh(0.8,0.3,0.8,0xb8a24a); base.position.y=0.15; g.add(base);
+    const shaft = boxMesh(0.35,1.6,0.35,0xe0c766,{metalness:0.3, roughness:0.3}); shaft.position.y=1.1; g.add(shaft);
+    const tip = coneMesh(0.25,0.4,0xffe38a,4,{metalness:0.4, roughness:0.2}); tip.rotation.y=Math.PI/4; tip.position.y=2.1; g.add(tip);
+    return g;
+  },
+};
+
+function disposeObject(obj){
+  obj.traverse(child=>{
+    if(child.geometry) child.geometry.dispose();
+    if(child.material){
+      if(Array.isArray(child.material)) child.material.forEach(m=>m.dispose());
+      else child.material.dispose();
+    }
+  });
+}
+function clearGroup(group){
+  while(group.children.length){ disposeObject(group.children.pop()); }
+}
+
+function initThree(){
+  const container = document.getElementById('grid3d');
+  const w = container.clientWidth||800, h = container.clientHeight||560;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0b1118);
+  scene.fog = new THREE.Fog(0x0b1118, 30, 95);
+
+  const camera = new THREE.PerspectiveCamera(50, w/h, 0.1, 500);
+  camera.position.set(14,14,18);
+
+  const renderer = new THREE.WebGLRenderer({antialias:true});
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+  renderer.setSize(w,h);
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  container.innerHTML=''; container.appendChild(renderer.domElement);
+
+  const controls = new THREE.OrbitControls(camera, renderer.domElement);
+  controls.enableDamping = true;
+  controls.dampingFactor = 0.08;
+  controls.maxPolarAngle = Math.PI/2 - 0.03;
+  controls.minDistance = 5;
+  controls.maxDistance = 70;
+
+  const hemi = new THREE.HemisphereLight(0xbfd9ff, 0x2a2015, 0.9);
+  scene.add(hemi);
+  const sun = new THREE.DirectionalLight(0xfff1d0, 1.15);
+  sun.position.set(20,30,10);
+  sun.castShadow = true;
+  sun.shadow.mapSize.set(2048,2048);
+  sun.shadow.camera.left=-45; sun.shadow.camera.right=45;
+  sun.shadow.camera.top=45; sun.shadow.camera.bottom=-45;
+  scene.add(sun); scene.add(sun.target);
+
+  const buildingsGroup = new THREE.Group(); scene.add(buildingsGroup);
+  const groundGroup = new THREE.Group(); scene.add(groundGroup);
+
+  const hoverGeo = new THREE.PlaneGeometry(TILE*0.92, TILE*0.92);
+  const hoverMat = new THREE.MeshBasicMaterial({color:0x4ade80, transparent:true, opacity:0.45, side:THREE.DoubleSide});
+  const hoverMesh = new THREE.Mesh(hoverGeo, hoverMat);
+  hoverMesh.rotation.x = -Math.PI/2; hoverMesh.visible=false;
+  scene.add(hoverMesh);
+
+  const raycaster = new THREE.Raycaster();
+
+  Object.assign(threeState, {
+    scene, camera, renderer, controls, buildingsGroup, groundGroup, hoverMesh,
+    raycaster, mouse:new THREE.Vector2(), sun, hemi, lastCityId:null, lastGridVersion:null
+  });
+
+  window.addEventListener('resize', onThreeResize);
+  renderer.domElement.addEventListener('pointerdown', onPointerDown);
+  renderer.domElement.addEventListener('pointerup', onPointerUp);
+  renderer.domElement.addEventListener('pointermove', onPointerMove);
+
+  animate();
+}
+function onThreeResize(){
+  const container = document.getElementById('grid3d');
+  if(!container || !threeState.camera) return;
+  const w = container.clientWidth, h = container.clientHeight;
+  if(w<=0||h<=0) return;
+  threeState.camera.aspect = w/h;
+  threeState.camera.updateProjectionMatrix();
+  threeState.renderer.setSize(w,h);
+}
+function loadCityScene(city){
+  const {groundGroup, controls, camera} = threeState;
+  clearGroup(groundGroup);
+  const w = city.gridW*TILE, d = city.gridH*TILE;
+  const baseColor = BIOME_COLORS[city.biome.name] || '#4d7c2f';
+  const groundMat = new THREE.MeshStandardMaterial({color:new THREE.Color(baseColor), roughness:0.95});
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(w,d), groundMat);
+  ground.rotation.x = -Math.PI/2; ground.receiveShadow = true;
+  groundGroup.add(ground);
+
+  const grid = new THREE.GridHelper(Math.max(w,d), Math.max(city.gridW, city.gridH), 0x000000, 0x000000);
+  grid.material.opacity = 0.15; grid.material.transparent = true;
+  grid.position.y = 0.011;
+  groundGroup.add(grid);
+
+  const borderGeo = new THREE.EdgesGeometry(new THREE.BoxGeometry(w+0.1,0.05,d+0.1));
+  const border = new THREE.LineSegments(borderGeo, new THREE.LineBasicMaterial({color:0xffffff, opacity:0.15, transparent:true}));
+  border.position.y=0.03;
+  groundGroup.add(border);
+
+  controls.target.set(0,0,0);
+  camera.position.set(w*0.55+6, Math.max(w,d)*0.6+6, d*0.55+8);
+  controls.update();
+
+  threeState.lastCityId = city.id;
+  threeState.lastGridVersion = -1;
+}
+function rebuildBuildings(city){
+  if(threeState.lastGridVersion === city.gridVersion && threeState.lastCityId===city.id) return;
+  const {buildingsGroup} = threeState;
+  clearGroup(buildingsGroup);
+  const noRotate = ['road','powerplant','watertower','stadium','monument','solar'];
+  for(let index=0;index<city.grid.length;index++){
+    const key = city.grid[index];
+    if(!key) continue;
+    const modelFn = BUILDING_MODELS[key];
+    if(!modelFn) continue;
+    const g = modelFn();
+    const row = Math.floor(index/city.gridW), col = index%city.gridW;
+    const x = (col - city.gridW/2 + 0.5)*TILE;
+    const z = (row - city.gridH/2 + 0.5)*TILE;
+    g.position.set(x,0,z);
+    if(!noRotate.includes(key)) g.rotation.y = ((index*53)%4)*(Math.PI/2);
+    buildingsGroup.add(g);
+  }
+  threeState.lastGridVersion = city.gridVersion;
+}
+function getGroundPoint(clientX, clientY){
+  const rect = threeState.renderer.domElement.getBoundingClientRect();
+  threeState.mouse.x = ((clientX-rect.left)/rect.width)*2-1;
+  threeState.mouse.y = -((clientY-rect.top)/rect.height)*2+1;
+  threeState.raycaster.setFromCamera(threeState.mouse, threeState.camera);
+  const plane = new THREE.Plane(new THREE.Vector3(0,1,0),0);
+  const point = new THREE.Vector3();
+  const hit = threeState.raycaster.ray.intersectPlane(plane, point);
+  return hit ? point : null;
+}
+function pointToCellIndex(city, point){
+  const col = Math.floor(point.x/TILE + city.gridW/2);
+  const row = Math.floor(point.z/TILE + city.gridH/2);
+  if(col<0||col>=city.gridW||row<0||row>=city.gridH) return -1;
+  return row*city.gridW+col;
+}
+let pointerDownInfo = null;
+function onPointerDown(e){ pointerDownInfo = {x:e.clientX, y:e.clientY, t:Date.now()}; }
+function onPointerUp(e){
+  if(!pointerDownInfo) return;
+  const dx = e.clientX-pointerDownInfo.x, dy = e.clientY-pointerDownInfo.y;
+  const dist = Math.sqrt(dx*dx+dy*dy);
+  const dt = Date.now()-pointerDownInfo.t;
+  pointerDownInfo = null;
+  if(dist<6 && dt<400){
+    const point = getGroundPoint(e.clientX,e.clientY);
+    if(!point) return;
+    const city = getActiveCity();
+    const idx = pointToCellIndex(city, point);
+    if(idx>=0) placeBuilding(city.id, idx);
+  }
+}
+function onPointerMove(e){
+  const point = getGroundPoint(e.clientX,e.clientY);
+  const tooltip = document.getElementById('tileTooltip');
+  if(!point || !threeState.hoverMesh){ if(threeState.hoverMesh) threeState.hoverMesh.visible=false; tooltip.style.display='none'; return; }
+  const city = getActiveCity();
+  const idx = pointToCellIndex(city, point);
+  if(idx<0){ threeState.hoverMesh.visible=false; tooltip.style.display='none'; return; }
+  const row = Math.floor(idx/city.gridW), col = idx%city.gridW;
+  const x = (col - city.gridW/2 + 0.5)*TILE;
+  const z = (row - city.gridH/2 + 0.5)*TILE;
+  threeState.hoverMesh.position.set(x,0.05,z);
+  threeState.hoverMesh.visible = true;
+  const key = city.grid[idx];
+  let color = 0x60a5fa;
+  if(state.selectedBuilding==='bulldoze') color = key ? 0xf87171 : 0x555555;
+  else if(state.selectedBuilding){
+    const b = BUILDINGS[state.selectedBuilding];
+    const canBuild = !key && state.funds>=b.cost && (!b.requires || !b.requires.minPop || city.population>=b.requires.minPop);
+    color = canBuild ? 0x4ade80 : 0xf87171;
+  }
+  threeState.hoverMesh.material.color.setHex(color);
+  tooltip.style.display='block';
+  tooltip.style.left = (e.clientX+14)+'px';
+  tooltip.style.top = (e.clientY+14)+'px';
+  tooltip.textContent = key ? BUILDINGS[key].name : 'Empty land';
+}
+function dolly(factor){
+  const {camera, controls} = threeState;
+  const dir = new THREE.Vector3().subVectors(camera.position, controls.target).multiplyScalar(factor);
+  camera.position.copy(controls.target).add(dir);
+  controls.update();
+}
+function resetView(){
+  const city = getActiveCity();
+  const w = city.gridW*TILE, d = city.gridH*TILE;
+  threeState.controls.target.set(0,0,0);
+  threeState.camera.position.set(w*0.55+6, Math.max(w,d)*0.6+6, d*0.55+8);
+  threeState.controls.update();
+}
+let autoRotate = false;
+function toggleAutoRotate(){
+  autoRotate = !autoRotate;
+  threeState.controls.autoRotate = autoRotate;
+  threeState.controls.autoRotateSpeed = 1.2;
+  document.getElementById('autoRotateBtn').classList.toggle('active', autoRotate);
+}
+function animate(){
+  requestAnimationFrame(animate);
+  if(threeState.controls) threeState.controls.update();
+  if(threeState.sun && state){
+    const angle = (state.day%40)/40*Math.PI*2;
+    const radius = 28;
+    threeState.sun.position.set(Math.cos(angle)*radius, 18+Math.sin(angle)*8+10, Math.sin(angle)*radius);
+    threeState.sun.target.position.set(0,0,0);
+    threeState.sun.target.updateMatrixWorld();
+  }
+  if(threeState.renderer) threeState.renderer.render(threeState.scene, threeState.camera);
+}
+
+/* ================= RENDERING ================= */
+function renderHeader(){
+  document.getElementById('fundsDisplay').textContent = '💰 '+fmt(state.funds);
+  document.getElementById('popDisplay').textContent = '👥 '+fmt(totalPopulation());
+  document.getElementById('dayDisplay').textContent = '📅 Day '+state.day;
+  document.getElementById('achDisplay').textContent = `🏆 ${state.achievements.length}/${ACHIEVEMENTS.length}`;
+  document.getElementById('prestigeDisplay').textContent = `✨ ${state.prestige.points} pts`;
+  document.querySelectorAll('.speed-btn').forEach(b=>{
+    b.classList.toggle('active', Number(b.dataset.speed)===state.speed && !state.paused);
+  });
+  document.getElementById('pauseBtn').classList.toggle('active', state.paused);
+}
+function renderSidebar(){
+  const term = (document.getElementById('citySearch').value||'').toLowerCase();
+  const html = state.cities.filter(c=>c.name.toLowerCase().includes(term)).map(c=>{
+    const activeCls = c.id===state.activeCityId ? 'active' : '';
+    const lockedCls = !c.unlocked ? 'locked' : '';
+    let inner;
+    if(c.unlocked){
+      inner = `<div>${c.biome.emoji} <b>${c.name}</b></div>
+        <div style="font-size:11px;opacity:.8;">👥 ${fmt(c.population)}/${fmt(c.populationCap)} · 😊${Math.round(c.happiness)}%</div>`;
+    } else {
+      const canUnlock = c.id===0 || state.cities[c.id-1].unlocked;
+      inner = `<div>${c.biome.emoji} <b>${c.name}</b> 🔒</div>
+        ${canUnlock ? `<button class="unlock-btn" data-unlock="${c.id}">Unlock 💰${fmt(getUnlockCost(c))}</button>` : `<div style="font-size:11px;opacity:.6;">Locked</div>`}`;
+    }
+    return `<div class="city-item ${activeCls} ${lockedCls}" data-select="${c.unlocked ? c.id : ''}">${inner}</div>`;
+  }).join('');
+  document.getElementById('cityList').innerHTML = html;
+}
+function renderBuildMenu(){
+  const city = getActiveCity();
+  const tabsHtml = Object.keys(CATEGORY_LABELS).map(cat=>
+    `<div class="tab-btn ${state.activeTab===cat?'active':''}" data-tab="${cat}">${CATEGORY_LABELS[cat]}</div>`
+  ).join('');
+  const items = Object.entries(BUILDINGS).filter(([k,b])=>b.category===state.activeTab);
+  const btnsHtml = items.map(([k,b])=>{
+    const affordable = state.funds>=b.cost;
+    const meetsReq = !b.requires || !b.requires.minPop || (city && city.population>=b.requires.minPop);
+    const disabled = !affordable || !meetsReq;
+    const selected = state.selectedBuilding===k;
+    const reqText = b.requires && b.requires.minPop ? ` (needs pop ${fmt(b.requires.minPop)})` : '';
+    return `<div class="build-btn ${selected?'selected':''} ${disabled?'disabled':''}" data-build="${k}" title="${b.name}${reqText}">
+      <div class="icon">${b.emoji}</div><div>${b.name}</div>
+      <div style="font-size:10px;color:${affordable?'#8fd6a8':'#f77'}">💰${fmt(b.cost)}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('buildTabs').innerHTML = tabsHtml;
+  document.getElementById('buildButtons').innerHTML = btnsHtml +
+    `<div class="build-btn ${state.selectedBuilding==='bulldoze'?'selected':''}" data-build="bulldoze" style="border-color:#f87171;" title="Remove building (30% refund)">
+      <div class="icon">🧨</div><div>Bulldoze</div></div>`;
+}
+function renderGrid(){
+  const city = getActiveCity();
+  document.getElementById('cityTitle').textContent = `${city.biome.emoji} ${city.name}`;
+  document.getElementById('cityBonus').textContent = describeBiomeBonus(city.biome) || 'No special bonus';
+  if(threeState.lastCityId !== city.id) loadCityScene(city);
+  rebuildBuildings(city);
+}
+function renderStats(){
+  const city = getActiveCity();
+  const fin = cityFinance(city);
+  document.getElementById('statsPanel').innerHTML = `
+    <div class="stat-block">👥 Population<div class="bar-container"><div class="bar-fill" style="width:${city.populationCap?(city.population/city.populationCap*100):0}%"></div></div>${fmt(city.population)} / ${fmt(city.populationCap)}</div>
+    <div class="stat-block">😊 Happiness<div class="bar-container"><div class="bar-fill" style="width:${city.happiness}%;background:${city.happiness>60?'#4ade80':city.happiness>30?'#facc15':'#f87171'}"></div></div>${Math.round(city.happiness)}%</div>
+    <div class="stat-block">⚡ Power<div class="bar-container"><div class="bar-fill" style="width:${city.powerCap?Math.min(100,city.powerUse/city.powerCap*100):0}%;background:${city.powerUse>city.powerCap?'#f87171':'#60a5fa'}"></div></div>${fmt(city.powerUse)} / ${fmt(city.powerCap)}</div>
+    <div class="stat-block">💧 Water<div class="bar-container"><div class="bar-fill" style="width:${city.waterCap?Math.min(100,city.waterUse/city.waterCap*100):0}%;background:${city.waterUse>city.waterCap?'#f87171':'#38bdf8'}"></div></div>${fmt(city.waterUse)} / ${fmt(city.waterCap)}</div>
+    <div class="stat-block">💼 Jobs<br>${fmt(city.jobsFilled)} / ${fmt(city.jobs)}</div>
+    <div class="stat-block">📈 Net Income/tick<br><span style="color:${fin.net>=0?'#4ade80':'#f87171'}">${fin.net>=0?'+':''}${fmt(fin.net)}</span></div>
+    <div class="stat-block">🏷️ Tax Rate: <span id="taxVal">${city.taxRate}%</span><br><input type="range" min="0" max="30" value="${city.taxRate}" id="taxSlider" style="width:150px;"></div>
+    <div class="stat-block">🛡️ Disaster Insurance<br>${city.insurance ? '<span style="color:#4ade80;">Active ✅</span>' : `<button class="unlock-btn" id="buyInsuranceBtn">Buy 💰500</button>`}</div>
+  `;
+}
+function renderAchievementsModal(){
+  document.getElementById('achievementsList').innerHTML = ACHIEVEMENTS.map(a=>{
+    const done = state.achievements.includes(a.id);
+    return `<div style="padding:8px;border-bottom:1px solid #2a3a52;">${done?'✅':'🔒'} <b>${a.label}</b><br><span style="opacity:.7;font-size:12px;">${a.desc}</span></div>`;
+  }).join('');
+}
+function renderDisasterLog(){
+  const el = document.getElementById('disasterLogList');
+  if(state.disasterLog.length===0){ el.innerHTML = '<p>No disasters yet. Stay safe! 🍀</p>'; return; }
+  el.innerHTML = state.disasterLog.map(e=>
+    `<div style="padding:6px;border-bottom:1px solid #2a3a52;">Day ${e.day} — ${e.disaster} hit <b>${e.city}</b>${e.lost?` (${e.lost} buildings destroyed)`:''}</div>`
+  ).join('');
+}
+function renderAll(){ renderHeader(); renderSidebar(); renderBuildMenu(); renderGrid(); renderStats(); }
+
+/* ================= EVENTS ================= */
+function initEventListeners(){
+  document.getElementById('cityList').addEventListener('click', e=>{
+    const unlockBtn = e.target.closest('[data-unlock]');
+    if(unlockBtn){ unlockCity(Number(unlockBtn.dataset.unlock)); return; }
+    const item = e.target.closest('[data-select]');
+    if(item && item.dataset.select!=='') selectCity(Number(item.dataset.select));
+  });
+  document.getElementById('citySearch').addEventListener('input', renderSidebar);
+  document.getElementById('buildTabs').addEventListener('click', e=>{
+    const tab = e.target.closest('[data-tab]');
+    if(tab){ state.activeTab = tab.dataset.tab; renderBuildMenu(); }
+  });
+  document.getElementById('buildButtons').addEventListener('click', e=>{
+    const btn = e.target.closest('[data-build]');
+    if(btn) selectBuilding(btn.dataset.build);
+  });
+  document.getElementById('statsPanel').addEventListener('input', e=>{
+    if(e.target.id==='taxSlider'){
+      getActiveCity().taxRate = Number(e.target.value);
+      document.getElementById('taxVal').textContent = e.target.value+'%';
+    }
+  });
+  document.getElementById('statsPanel').addEventListener('click', e=>{
+    if(e.target.id==='buyInsuranceBtn') buyInsurance(getActiveCity());
+  });
+  document.querySelectorAll('.speed-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{ state.speed=Number(b.dataset.speed); state.paused=false; restartLoop(); renderHeader(); });
+  });
+  document.getElementById('pauseBtn').addEventListener('click', ()=>{ state.paused=!state.paused; renderHeader(); });
+  document.getElementById('saveBtn').addEventListener('click', ()=>{ saveGame(); toast('💾 Game saved!'); });
+  document.getElementById('resetBtn').addEventListener('click', resetGame);
+  document.getElementById('exportBtn').addEventListener('click', exportSave);
+  document.getElementById('importBtn').addEventListener('click', importSave);
+  document.getElementById('achDisplay').addEventListener('click', ()=>{ renderAchievementsModal(); toggleModal('achievementsModal'); });
+  document.getElementById('helpBtn').addEventListener('click', ()=>toggleModal('helpModal'));
+  document.getElementById('prestigeBtn').addEventListener('click', openPrestigeModal);
+  document.getElementById('prestigeDisplay').addEventListener('click', openPrestigeModal);
+  document.getElementById('prestigeConfirmBtn').addEventListener('click', doPrestige);
+  document.getElementById('disasterBtn').addEventListener('click', ()=>{ renderDisasterLog(); toggleModal('disasterModal'); });
+  document.getElementById('leaderboardBtn').addEventListener('click', ()=>{
+    document.getElementById('playerNameInput').value = state.playerName || '';
+    loadLeaderboard();
+    toggleModal('leaderboardModal');
+  });
+  document.getElementById('submitScoreBtn').addEventListener('click', ()=>{
+    const name = document.getElementById('playerNameInput').value.trim();
+    state.playerName = name || 'Anonymous';
+    saveGame();
+    submitScore();
+  });
+  document.getElementById('refreshLeaderboardBtn').addEventListener('click', loadLeaderboard);
+  document.querySelectorAll('.modal-close').forEach(b=>{
+    b.addEventListener('click', e=>e.target.closest('.modal-overlay').classList.add('hidden'));
+  });
+  document.querySelectorAll('.modal-overlay').forEach(o=>{
+    o.addEventListener('click', e=>{ if(e.target===o) o.classList.add('hidden'); });
+  });
+  document.getElementById('zoomIn').addEventListener('click', ()=>dolly(0.85));
+  document.getElementById('zoomOut').addEventListener('click', ()=>dolly(1.18));
+  document.getElementById('zoomReset').addEventListener('click', resetView);
+  document.getElementById('autoRotateBtn').addEventListener('click', toggleAutoRotate);
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Escape'){ state.selectedBuilding=null; renderBuildMenu(); }
+  });
+}
+
+/* ================= INIT ================= */
+window.addEventListener('DOMContentLoaded', ()=>{
+  loadGame();
+  initFirebase();
+  if(!state.playerName){
+    const n = prompt('Welcome, Mayor! Enter your name for the global leaderboard (optional):');
+    state.playerName = (n && n.trim()) ? n.trim() : 'Anonymous';
+    saveGame();
+  }
+  initThree();
+  initEventListeners();
+  restartLoop();
+  renderAll();
+});
+</script>
 </body>
 </html>
